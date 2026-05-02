@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Calendar, Loader2 } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -34,16 +35,43 @@ export default function Home() {
     setPrayerTimes(newTimes);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || !prayerDate || prayerTimes.some(time => !time)) return;
+    
+    const validPrayerTimes = prayerTimes.filter(time => time.trim() !== "");
+    
+    if (!phoneNumber || !prayerDate || validPrayerTimes.length === 0) return;
     
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    // Format date string explicitly to YYYY-MM-DD
+    const formattedDate = new Date(prayerDate).toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('reminders')
+      .insert([
+        { 
+          phone: phoneNumber, 
+          timezone: timezone, 
+          prayer_date: formattedDate, 
+          frequency: frequency, 
+          prayer_times: validPrayerTimes 
+        },
+      ]);
+
+    setIsLoading(false);
+
+    if (error) {
+      console.error("Error inserting data:", error);
+      alert(`Failed to set reminder: ${error.message}`);
+    } else {
       setShowToast(true);
       setTimeout(() => setShowToast(false), 5000);
-    }, 1500);
+      setPhoneNumber("");
+      setPrayerTimes(['']);
+      setFrequency("Just once");
+      setPrayerDate(new Date().toISOString().split('T')[0]);
+    }
   };
 
   return (
