@@ -47,6 +47,26 @@ export default function Home() {
     // Format date string explicitly to YYYY-MM-DD
     const formattedDate = new Date(prayerDate).toISOString().split('T')[0];
 
+    // Check if the number is already registered
+    const { data: existingData, error: checkError } = await supabase
+      .from('reminders')
+      .select('phone')
+      .eq('phone', phoneNumber)
+      .limit(1);
+
+    if (checkError) {
+      console.error("Error checking existing number:", checkError);
+      setIsLoading(false);
+      alert(`Error verifying number: ${checkError.message}`);
+      return;
+    }
+
+    if (existingData && existingData.length > 0) {
+      setIsLoading(false);
+      alert("Omo! This number is already registered for prayers. Use another number!");
+      return;
+    }
+
     const { data, error } = await supabase
       .from('reminders')
       .insert([
