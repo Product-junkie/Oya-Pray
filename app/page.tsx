@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Calendar, Loader2 } from "lucide-react";
 
 export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [timezone, setTimezone] = useState("");
+  const [prayerDate, setPrayerDate] = useState("");
+  const [frequency, setFrequency] = useState("Just once");
   const [prayerTimes, setPrayerTimes] = useState<string[]>(['']);
   const [showToast, setShowToast] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setPrayerDate(new Date().toISOString().split('T')[0]);
   }, []);
 
   const handleAddTime = () => {
@@ -31,24 +36,26 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || prayerTimes.some(time => !time)) return;
+    if (!phoneNumber || !prayerDate || prayerTimes.some(time => !time)) return;
     
+    setIsLoading(true);
     setTimeout(() => {
+      setIsLoading(false);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 5000);
-    }, 500);
+    }, 1500);
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 bg-oya-dark overflow-hidden relative">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 bg-[#121212] bg-ankara-pattern overflow-hidden relative">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-oya-red opacity-20 blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-oya-yellow opacity-10 blur-[100px] pointer-events-none"></div>
 
       <div className="z-10 max-w-lg w-full bg-[#1e1e1e] border border-gray-800 p-8 rounded-2xl shadow-2xl relative">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-oya-yellow via-oya-red to-oya-yellow rounded-t-2xl"></div>
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#ea580c] to-[#991b1b] rounded-t-2xl"></div>
 
         <div className="text-center mb-10 mt-4">
-          <h1 className="text-5xl font-black text-white mb-2 uppercase tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-black text-white mb-2 uppercase tracking-tighter">
             Oya <span className="text-oya-red">Pray!</span>
           </h1>
           <p className="text-oya-yellow font-semibold text-lg uppercase tracking-wider mb-2">
@@ -76,6 +83,25 @@ export default function Home() {
           </div>
 
           <div>
+            <label htmlFor="date" className="block text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
+              Select Date
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Calendar className="h-5 w-5 text-gray-500" />
+              </div>
+              <input
+                type="date"
+                id="date"
+                className="w-full pl-10 pr-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all [color-scheme:dark]"
+                value={prayerDate}
+                onChange={(e) => setPrayerDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
             <label htmlFor="timezone" className="block text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
               Your Timezone
             </label>
@@ -92,6 +118,23 @@ export default function Home() {
               {timezone && !["Africa/Lagos", "Europe/London", "America/New_York"].includes(timezone) && (
                 <option value={timezone}>{timezone} (Local)</option>
               )}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="frequency" className="block text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
+              How often?
+            </label>
+            <select
+              id="frequency"
+              className="w-full px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all"
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+              required
+            >
+              <option value="Just once">Just once</option>
+              <option value="Every Day (Morning Devotion)">Every Day (Morning Devotion)</option>
+              <option value="Weekly (Friday Vigil)">Weekly (Friday Vigil)</option>
             </select>
           </div>
 
@@ -115,7 +158,7 @@ export default function Home() {
                 <div key={index} className="flex items-center gap-3">
                   <input
                     type="time"
-                    className="flex-1 px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all"
+                    className="flex-1 px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all [color-scheme:dark]"
                     value={time}
                     onChange={(e) => handleTimeChange(index, e.target.value)}
                     required
@@ -137,9 +180,17 @@ export default function Home() {
 
           <button
             type="submit"
-            className="w-full py-4 mt-8 bg-oya-red hover:bg-red-700 text-white font-black text-xl uppercase tracking-widest rounded-lg shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:shadow-[0_0_30px_rgba(229,9,20,0.6)] transform hover:-translate-y-1 transition-all duration-200"
+            disabled={isLoading}
+            className="w-full py-4 mt-8 bg-gradient-to-r from-[#ea580c] to-[#991b1b] hover:from-[#d04e0a] hover:to-[#7f1616] text-white font-black text-xl uppercase tracking-widest rounded-lg shadow-[0_0_20px_rgba(234,88,12,0.4)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-3"
           >
-            Set Reminder NOW
+            {isLoading ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Set Reminder NOW"
+            )}
           </button>
         </form>
 
