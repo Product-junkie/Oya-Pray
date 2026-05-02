@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       minute: '2-digit',
       hour12: false,
     });
-    
+
     let currentLagosTime = lagosFormatter.format(now);
     if (currentLagosTime.startsWith('24:')) {
       currentLagosTime = currentLagosTime.replace('24:', '00:');
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
         // Check if the exact HH:mm exists in their requested prayer_times
         if (Array.isArray(prayer_times) && prayer_times.includes(currentLagosTime)) {
           console.log(`⏰ Match found for ${phone} at Lagos time ${currentLagosTime}! Initiating wake-up call...`);
-          
+
           const call = await client.calls.create({
             twiml: '<Response><Say voice="alice" language="en-GB">Oya! Wake up and pray right now! Time is going and you are still sleeping. Get up!</Say></Response>',
             to: phone,

@@ -37,11 +37,11 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validPrayerTimes = prayerTimes.filter(time => time.trim() !== "");
-    
+
     if (!phoneNumber || !prayerDate || validPrayerTimes.length === 0) return;
-    
+
     setIsLoading(true);
 
     let formattedPhone = phoneNumber.trim();
@@ -75,12 +75,12 @@ export default function Home() {
     const { data, error } = await supabase
       .from('reminders')
       .insert([
-        { 
-          phone: formattedPhone, 
-          timezone: timezone, 
-          prayer_date: formattedDate, 
-          frequency: frequency, 
-          prayer_times: validPrayerTimes 
+        {
+          phone: formattedPhone,
+          timezone: timezone,
+          prayer_date: formattedDate,
+          frequency: frequency,
+          prayer_times: validPrayerTimes
         },
       ]);
 
