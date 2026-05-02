@@ -44,6 +44,11 @@ export default function Home() {
     
     setIsLoading(true);
 
+    let formattedPhone = phoneNumber.trim();
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '+234' + formattedPhone.slice(1);
+    }
+
     // Format date string explicitly to YYYY-MM-DD
     const formattedDate = new Date(prayerDate).toISOString().split('T')[0];
 
@@ -51,7 +56,7 @@ export default function Home() {
     const { data: existingData, error: checkError } = await supabase
       .from('reminders')
       .select('phone')
-      .eq('phone', phoneNumber)
+      .eq('phone', formattedPhone)
       .limit(1);
 
     if (checkError) {
@@ -71,7 +76,7 @@ export default function Home() {
       .from('reminders')
       .insert([
         { 
-          phone: phoneNumber, 
+          phone: formattedPhone, 
           timezone: timezone, 
           prayer_date: formattedDate, 
           frequency: frequency, 

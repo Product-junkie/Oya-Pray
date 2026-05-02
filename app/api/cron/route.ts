@@ -31,34 +31,31 @@ export async function GET(request: Request) {
 
     const callsInitiated = [];
 
-    console.log(`--- Running Cron Job at ${new Date().toISOString()} ---`);
+    const now = new Date();
+    const lagosFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Lagos',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    
+    let currentLagosTime = lagosFormatter.format(now);
+    if (currentLagosTime.startsWith('24:')) {
+      currentLagosTime = currentLagosTime.replace('24:', '00:');
+    }
+
+    console.log(`--- Running Cron Job at ${now.toISOString()} ---`);
+    console.log(`📍 Current Lagos Time: ${currentLagosTime}`);
 
     for (const reminder of reminders) {
-      const { phone, timezone, prayer_times } = reminder;
+      const { phone, prayer_times } = reminder;
 
       try {
-        // Get the current time in the user's timezone formatted strictly as HH:mm
-        const now = new Date();
-        const formatter = new Intl.DateTimeFormat('en-GB', {
-          timeZone: timezone,
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
-        
-        // Output looks like "14:30"
-        let currentHHMM = formatter.format(now);
-        
-        // Some systems return "24:00" for midnight instead of "00:00". Handle safely.
-        if (currentHHMM.startsWith('24:')) {
-          currentHHMM = currentHHMM.replace('24:', '00:');
-        }
-
-        console.log(`[${phone}] TZ: ${timezone} | Local Time: ${currentHHMM} | Target Times: ${JSON.stringify(prayer_times)}`);
+        console.log(`[${phone}] Target Times: ${JSON.stringify(prayer_times)}`);
 
         // Check if the exact HH:mm exists in their requested prayer_times
-        if (Array.isArray(prayer_times) && prayer_times.includes(currentHHMM)) {
-          console.log(`⏰ Match found for ${phone}! Initiating wake-up call...`);
+        if (Array.isArray(prayer_times) && prayer_times.includes(currentLagosTime)) {
+          console.log(`⏰ Match found for ${phone} at Lagos time ${currentLagosTime}! Initiating wake-up call...`);
           
           const call = await client.calls.create({
             twiml: '<Response><Say voice="alice" language="en-GB">Oya! Wake up and pray right now! Time is going and you are still sleeping. Get up!</Say></Response>',
@@ -66,7 +63,7 @@ export async function GET(request: Request) {
             from: twilioPhoneNumber,
           });
 
-          callsInitiated.push({ phone, callSid: call.sid, localTime: currentHHMM });
+          callsInitiated.push({ phone, callSid: call.sid, localTime: currentLagosTime });
           console.log(`📞 Call queued for ${phone}. SID: ${call.sid}`);
         }
       } catch (err) {
