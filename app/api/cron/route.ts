@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         await client.calls.create({
           twiml: `<Response><Say voice="alice">Oya! Wake up and pray right now! Time is going and you are still sleeping!</Say></Response>`,
           to: r.phone,
-          from: process.env.TWILIO_PHONE_NUMBER,
+          from: process.env.TWILIO_PHONE_NUMBER as string,
         });
         return { phone: r.phone, status: 'Called' };
       } catch (err) {
