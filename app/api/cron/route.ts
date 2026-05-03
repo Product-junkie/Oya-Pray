@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: `No reminders for ${lagosTime}` });
   }
 
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  const client = const client = twilio(process.env.TWILIO_ACCOUNT_SID as string, process.env.TWILIO_AUTH_TOKEN as string);
 
   const results = await Promise.all(
     peopleToCall.map(async (r) => {
