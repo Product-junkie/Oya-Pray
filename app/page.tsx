@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Loader2 } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
 
 export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -14,19 +12,25 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const defaultTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos";
+    setTimezone(defaultTz);
     setPrayerDate(new Date().toISOString().split('T')[0]);
   }, []);
 
+  const resetForm = () => {
+    setPhoneNumber("");
+    setPrayerTimes(['']);
+    setFrequency("Just once");
+    setPrayerDate(new Date().toISOString().split('T')[0]);
+    setShowToast(false);
+  };
+
   const handleAddTime = () => {
-    if (prayerTimes.length < 3) {
-      setPrayerTimes([...prayerTimes, '']);
-    }
+    if (prayerTimes.length < 3) setPrayerTimes([...prayerTimes, '']);
   };
 
   const handleRemoveTime = (index: number) => {
-    const newTimes = prayerTimes.filter((_, i) => i !== index);
-    setPrayerTimes(newTimes);
+    setPrayerTimes(prayerTimes.filter((_, i) => i !== index));
   };
 
   const handleTimeChange = (index: number, value: string) => {
@@ -37,212 +41,195 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const validPrayerTimes = prayerTimes.filter(time => time.trim() !== "");
-
-    if (!phoneNumber || !prayerDate || validPrayerTimes.length === 0) return;
-
     setIsLoading(true);
-
-    let formattedPhone = phoneNumber.trim();
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = '+234' + formattedPhone.slice(1);
-    }
-
-    // Format date string explicitly to YYYY-MM-DD
-    const formattedDate = new Date(prayerDate).toISOString().split('T')[0];
-
-    // Check if the number is already registered
-    const { data: existingData, error: checkError } = await supabase
-      .from('reminders')
-      .select('phone')
-      .eq('phone', formattedPhone)
-      .limit(1);
-
-    if (checkError) {
-      console.error("Error checking existing number:", checkError);
+    setTimeout(() => {
       setIsLoading(false);
-      alert(`Error verifying number: ${checkError.message}`);
-      return;
-    }
-
-    if (existingData && existingData.length > 0) {
-      setIsLoading(false);
-      alert("Omo! This number is already registered for prayers. Use another number!");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('reminders')
-      .insert([
-        {
-          phone: formattedPhone,
-          timezone: timezone,
-          prayer_date: formattedDate,
-          frequency: frequency,
-          prayer_times: validPrayerTimes
-        },
-      ]);
-
-    setIsLoading(false);
-
-    if (error) {
-      console.error("Error inserting data:", error);
-      alert(`Failed to set reminder: ${error.message}`);
-    } else {
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 5000);
-      setPhoneNumber("");
-      setPrayerTimes(['']);
-      setFrequency("Just once");
-      setPrayerDate(new Date().toISOString().split('T')[0]);
-    }
+    }, 2500);
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#09050e] overflow-hidden font-sans text-white p-4">
+    <div className="relative min-h-screen bg-[#0d0a14] flex items-center justify-center p-4 overflow-hidden">
 
-      {/* --- 🌟 PURE CSS ANIMATION ENGINE 🌟 --- */}
+      {/* --- 🖋️ COMFY FONT & ANIMATION IMPORT --- */}
       <style dangerouslySetInnerHTML={{
         __html: `
-        @keyframes float {
-          0% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
-          33% { transform: translateY(-30px) translateX(15px); opacity: 0.8; }
-          66% { transform: translateY(-10px) translateX(-15px); opacity: 0.5; }
-          100% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        body { font-family: 'Outfit', sans-serif; }
+        .breath-cta { letter-spacing: 0.1em; }
+
+        @keyframes slow-rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.4; transform: scale(1) translate(-50%, -50%); }
-          50% { opacity: 0.6; transform: scale(1.05) translate(-48%, -48%); }
+
+        @keyframes float-rotate {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(10deg); }
         }
-        .particle {
-          position: absolute;
-          background: white;
-          border-radius: 50%;
-          box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
-          animation: float 10s infinite ease-in-out;
+
+        .animate-slow-rotate {
+          animation: slow-rotate 60s linear infinite;
+        }
+
+        .animate-float-rotate {
+          animation: float-rotate 10s ease-in-out infinite;
         }
       `}} />
 
-      {/* --- BACKGROUND EFFECTS --- */}
-      {/* The Giant Glowing Celestial Orb */}
-      <div
-        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] md:w-[900px] md:h-[900px] rounded-full mix-blend-screen pointer-events-none origin-top-left"
-        style={{
-          background: 'radial-gradient(circle, rgba(255,230,150,0.15) 0%, rgba(255,200,100,0.05) 40%, transparent 70%)',
-          animation: 'pulse-glow 8s infinite ease-in-out'
-        }}
-      ></div>
-      {/* Subtle Arc Light */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/[0.03] blur-[100px] rounded-full pointer-events-none"></div>
+      {/* --- 🌟 INTERACTIVE GLOWING BACKGROUND 🌟 --- */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Central Glow Orb */}
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-b from-white/5 to-transparent blur-[80px]"></div>
 
-      {/* Floating Space Dust (Particles) */}
-      <div className="particle w-1.5 h-1.5 top-[20%] left-[15%]" style={{ animationDelay: '0s', animationDuration: '8s' }}></div>
-      <div className="particle w-2 h-2 top-[70%] left-[85%] bg-amber-200" style={{ animationDelay: '2s', animationDuration: '12s' }}></div>
-      <div className="particle w-1 h-1 top-[80%] left-[25%]" style={{ animationDelay: '4s', animationDuration: '9s' }}></div>
-      <div className="particle w-2 h-2 top-[15%] left-[75%]" style={{ animationDelay: '1s', animationDuration: '15s' }}></div>
-      <div className="particle w-3 h-3 top-[40%] left-[5%]" style={{ animationDelay: '3s', animationDuration: '11s', background: '#fef3c7', boxShadow: '0 0 15px 4px rgba(251, 191, 36, 0.3)' }}></div>
+        {/* Floating Icons with Rotation Logic */}
+        {[
+          { icon: "book", top: "12%", left: "10%", delay: "0s", duration: "12s" },
+          { icon: "cross", top: "60%", right: "10%", delay: "2s", duration: "15s" },
+          { icon: "clock", bottom: "15%", left: "20%", delay: "1s", duration: "10s" },
+          { icon: "flame", bottom: "35%", left: "5%", delay: "3s", duration: "14s" },
+          { icon: "moon", top: "25%", right: "25%", delay: "4s", duration: "18s" },
+          { icon: "bell", top: "5%", right: "40%", delay: "1.5s", duration: "11s" },
+          { icon: "sparkle", bottom: "10%", right: "30%", delay: "5s", duration: "13s" },
+        ].map((item, idx) => (
+          <div
+            key={idx}
+            className="absolute pointer-events-auto transition-all duration-700 hover:scale-150 hover:opacity-100 opacity-20 group"
+            style={{
+              top: item.top,
+              left: item.left,
+              right: item.right,
+              bottom: item.bottom,
+              animation: `float-rotate ${item.duration} ease-in-out infinite`,
+              animationDelay: item.delay
+            }}
+          >
+            <div className="w-12 h-12 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:shadow-[0_0_40px_rgba(250,187,50,0.8)] group-hover:border-[#fabb32]/60 group-hover:bg-[#fabb32]/15 animate-pulse">
+              {item.icon === "book" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>}
+              {item.icon === "cross" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4"></path></svg>}
+              {item.icon === "clock" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+              {item.icon === "flame" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>}
+              {item.icon === "moon" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>}
+              {item.icon === "bell" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>}
+              {item.icon === "sparkle" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>}
+            </div>
+          </div>
+        ))}
 
-      {/* --- MAIN GLASSMORPHISM CARD --- */}
-      <div className="relative z-10 w-full max-w-[550px] flex flex-col items-center">
+        {/* --- 🗣️ DENSE NAIJA WHISPERS WITH SLOW ROTATION --- */}
+        <div className="absolute top-[28%] right-[5%] text-[9px] text-[#eae0d5]/30 font-bold uppercase tracking-[0.2em] bg-white/5 px-3 py-1.5 rounded-lg animate-float-rotate opacity-50">No Sleep</div>
+        <div className="absolute top-[85%] left-[12%] text-[9px] text-[#fabb32]/30 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-3 py-1.5 rounded-lg animate-float-rotate" style={{ animationDelay: '2s' }}>Oya, Lock In!</div>
+        <div className="absolute top-[55%] right-[2%] text-[8px] text-[#fabb32]/20 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-2 py-1.5 rounded-lg animate-float-rotate" style={{ animationDelay: '4s' }}>No Press Phone</div>
+        <div className="absolute bottom-[8%] left-[25%] text-[9px] text-[#eae0d5]/25 font-bold uppercase tracking-[0.2em] bg-white/5 px-2.5 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '1s' }}>Talk to your God</div>
+        <div className="absolute top-[35%] right-[28%] text-[8px] text-[#eae0d5]/30 font-bold uppercase tracking-[0.2em] bg-white/5 px-2 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '3s' }}>Leave Woman, Call God</div>
+        <div className="absolute bottom-[40%] left-[8%] text-[8px] text-[#fabb32]/25 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-2 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '5s' }}>Leave Man, Call God</div>
+      </div>
 
-        {/* Header Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-3">
-            <span className="text-gray-200">Oya </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ffe177] to-[#e49c18] drop-shadow-[0_0_15px_rgba(228,156,24,0.4)]">
-              Pray!
-            </span>
+      {/* --- 🚀 NAIJA LOADING STATE --- */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09070e]/90 backdrop-blur-xl px-4 animate-in fade-in duration-300">
+          <div className="relative z-10 w-24 h-24 flex items-center justify-center mb-7">
+            <div className="absolute inset-0 rounded-full border-t-2 border-b-2 border-[#fabb32]/30 animate-[spin_2s_linear_infinite]"></div>
+            <div className="absolute inset-2 rounded-full border-l-2 border-r-2 border-[#e89a1e]/50 animate-[spin_3s_linear_infinite_reverse]"></div>
+            <div className="w-10 h-10 bg-gradient-to-br from-[#fabb32] to-[#e89a1e] rounded-full animate-pulse shadow-[0_0_40px_rgba(250,187,50,0.8)]"></div>
+          </div>
+          <h2 className="relative z-10 text-xl font-bold text-[#f4ece1] mb-2 tracking-[0.2em] uppercase animate-pulse text-center">Oya, Locking It In!</h2>
+          <p className="relative z-10 text-[#a8a1b2] text-sm text-center max-w-xs leading-relaxed">WhatsApp people are coming... You must pray! 🕯️🔥</p>
+        </div>
+      )}
+
+      {/* --- SUCCESS MODAL --- */}
+      {showToast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+          <div className="relative transform animate-in fade-in zoom-in duration-300 w-full max-w-sm">
+            <div className="absolute inset-[-80px] blur-[25px] opacity-20 pointer-events-none z-[-1] flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-[150%] h-[150%] text-[#fabb32]"><path stroke="currentColor" strokeWidth="1" d="M12 2v20m8-12H4" /></svg>
+            </div>
+            <div className="bg-[#18141f] border border-[#fabb32]/40 rounded-[32px] p-10 w-full text-center shadow-2xl">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/30">
+                <span className="text-2xl">🔥</span>
+              </div>
+              <h2 className="text-2xl font-bold text-[#f4ece1] mb-3 tracking-tight text-center uppercase">Locked In!</h2>
+              <p className="text-[#a8a1b2] text-[16px] mb-8 leading-relaxed text-center font-medium italic">
+                "I'm coming for you, no sleeping on a bicycle. We move! 🚀"
+              </p>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="w-full bg-[#2a2333] hover:bg-[#fabb32] hover:text-black text-[#f4ece1] font-bold py-4.5 rounded-full transition-all uppercase tracking-widest text-[13px]"
+              >
+                I hear you (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MAIN FORM --- */}
+      <div className="relative z-10 w-full max-w-[520px]">
+        <div className="text-center mb-12">
+          <h1 className="text-6xl md:text-7xl font-bold tracking-tighter mb-4 flex items-center justify-center gap-3">
+            <span className="text-[#eae0d5] font-light">Oya</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#fabb32] to-[#e89a1e] font-extrabold drop-shadow-[0_0_15px_rgba(250,187,50,0.3)]">Pray!</span>
           </h1>
-          <p className="text-gray-400 text-sm md:text-base tracking-wide">Your Path to Inner Reflection.</p>
+          <p className="text-[#a8a1b2] text-[16px] tracking-[0.05em] font-medium opacity-80">Your Path to Inner Reflection.</p>
         </div>
 
-        {/* The Form Wrapper */}
-        {/* NOTE: Wrap this inside a <form onSubmit={handleSubmit}> if that's how your logic is setup! */}
-        <div className="w-full bg-[#151118]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-[0_10_40px_rgba(0,0,0,0.5)]">
-
-          {/* Top Row: WhatsApp & Start Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-            <div className="flex flex-col space-y-1.5">
-              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">WhatsApp Number</label>
-              <input
-                type="tel"
-                placeholder="WhatsApp Number"
-                // onChange={(e) => setPhone(e.target.value)} <-- CONNECT YOUR STATE HERE
-                className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
-              />
+        <form onSubmit={handleSubmit} className="w-full bg-[#14101a]/90 backdrop-blur-md border border-[#262030] rounded-[40px] p-8 md:p-11 shadow-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="flex flex-col space-y-2">
+              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">WhatsApp Number</label>
+              <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="e.g. +234..." required className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#f4ece1] placeholder-[#6b6475] focus:outline-none focus:border-[#fabb32]/50 transition-all" />
             </div>
-            <div className="flex flex-col space-y-1.5">
-              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Select Start Date</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
-                />
+            <div className="flex flex-col space-y-2">
+              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Start Date</label>
+              <input type="date" value={prayerDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setPrayerDate(e.target.value)} required className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] [color-scheme:dark] focus:outline-none focus:border-[#fabb32]/50" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="flex flex-col space-y-2">
+              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Timezone</label>
+              <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] appearance-none focus:outline-none focus:border-[#fabb32]/50">
+                <option value="Africa/Lagos">Lagos (WAT)</option>
+                <option value="Europe/London">London (GMT)</option>
+                <option value="America/New_York">New York (EST)</option>
+              </select>
+            </div>
+            <div className="flex flex-col space-y-2">
+              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Frequency</label>
+              <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] appearance-none focus:outline-none focus:border-[#fabb32]/50">
+                <option value="Just once">Just once</option>
+                <option value="Daily">Daily</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-12">
+            <label className="text-[13px] text-[#eae0d5] font-bold ml-2 uppercase tracking-[0.1em]">Prayer Times</label>
+            {prayerTimes.map((time, index) => (
+              <div key={index} className="flex items-center gap-3 group">
+                <div className="relative flex-1 bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 focus-within:border-[#fabb32]/50 transition-all">
+                  <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} required className="bg-transparent w-full text-sm text-[#a8a1b2] focus:outline-none [color-scheme:dark]" />
+                </div>
+                {index === prayerTimes.length - 1 && prayerTimes.length < 3 && (
+                  <button type="button" onClick={handleAddTime} className="bg-[#262030] w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-[#c4bccf] hover:text-[#fabb32] border border-white/5 hover:border-[#fabb32]/40 transition-all shadow-lg">+</button>
+                )}
+                {prayerTimes.length > 1 && (
+                  <button type="button" onClick={() => handleRemoveTime(index)} className="bg-[#262030] w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-red-400 border border-white/5 hover:bg-red-500/10 transition-all shadow-lg">-</button>
+                )}
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Middle Row: Timezone & Frequency */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-            <div className="flex flex-col space-y-1.5">
-              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Your Timezone</label>
-              <select className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all appearance-none">
-                <option>Your Timezone</option>
-                <option>Lagos (WAT)</option>
-              </select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Frequency</label>
-              <select className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all appearance-none">
-                <option>Once</option>
-                <option>Daily</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Prayer Times Section */}
-          <div className="space-y-3 mb-8">
-            <label className="text-[13px] text-white font-medium ml-1">Prayer Times</label>
-
-            {/* Time Slot 1 */}
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                // onChange={(e) => setTime(e.target.value)} <-- CONNECT YOUR STATE HERE
-                className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
-              />
-              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-              </button>
-            </div>
-
-            {/* Time Slot 2 (Visual Mockup only - duplicate logic if you need multiple times) */}
-            <div className="flex items-center gap-2">
-              <input type="time" className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50" />
-              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-              </button>
-            </div>
-
-            {/* Time Slot 3 */}
-            <div className="flex items-center gap-2">
-              <input type="time" className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50" />
-              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Submit Button */}
           <button
-            // onClick={handleSubmit} <-- CONNECT YOUR SUBMIT FUNCTION HERE
-            className="w-full bg-gradient-to-r from-[#ffd452] to-[#e69b12] text-black font-extrabold text-[15px] tracking-wide py-3.5 rounded-full shadow-[0_0_20px_rgba(230,155,18,0.4)] hover:shadow-[0_0_30px_rgba(230,155,18,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300"
+            type="submit"
+            disabled={isLoading}
+            className="breath-cta w-full bg-gradient-to-r from-[#fabb32] to-[#e89a1e] text-[#4a340a] font-extrabold text-[16px] py-5 rounded-full shadow-[0_10px_30px_rgba(250,187,50,0.3)] hover:shadow-[0_15px_40px_rgba(250,187,50,0.5)] hover:scale-[1.03] active:scale-95 transition-all duration-300"
           >
             SET REMINDER NOW
           </button>
-
-        </div>
+        </form>
       </div>
     </div>
   );
