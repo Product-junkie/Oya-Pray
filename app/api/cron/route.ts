@@ -35,7 +35,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: `No reminders for ${lagosTime}` });
     }
 
-    // Force TypeScript to accept these as strings no matter what
     const accountSid = process.env.TWILIO_ACCOUNT_SID || '';
     const authToken = process.env.TWILIO_AUTH_TOKEN || '';
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER || '';
@@ -45,12 +44,13 @@ export async function GET(request: Request) {
     const results = await Promise.all(
       peopleToCall.map(async (r) => {
         try {
-          await client.calls.create({
-            twiml: '<Response><Say voice="alice">Oya! Wake up and pray right now! Time is going and you are still sleeping!</Say></Response>',
-            to: r.phone,
-            from: twilioPhone,
+          // 🚨 WHATSAPP LOGIC 🚨
+          await client.messages.create({
+            body: '🚨 OYA PRAY! Wake up and pray right now! Time is going and you are still sleeping! 🚨',
+            from: `whatsapp:${twilioPhone}`,
+            to: `whatsapp:${r.phone}`,
           });
-          return { phone: r.phone, status: 'Called' };
+          return { phone: r.phone, status: 'WhatsApp Sent' };
         } catch (err: any) {
           return { phone: r.phone, status: 'Failed', error: err.message };
         }
