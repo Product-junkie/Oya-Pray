@@ -100,163 +100,149 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden flex-col items-center justify-center p-4 sm:p-6 md:p-24 bg-[#121212] bg-ankara-pattern relative">
-      <div className="absolute top-[-5%] left-[-10%] w-64 h-64 md:w-[40%] md:h-[40%] rounded-full bg-oya-red opacity-20 blur-[80px] md:blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-[-5%] right-[-10%] w-64 h-64 md:w-[40%] md:h-[40%] rounded-full bg-oya-yellow opacity-10 blur-[80px] md:blur-[100px] pointer-events-none"></div>
+    <div className="relative min-h-screen flex items-center justify-center bg-[#09050e] overflow-hidden font-sans text-white p-4">
 
-      <div className="z-10 w-[95%] sm:w-[90%] md:max-w-md bg-[#1e1e1e] border border-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl relative mx-auto">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#ea580c] to-[#991b1b] rounded-t-2xl"></div>
+      {/* --- 🌟 PURE CSS ANIMATION ENGINE 🌟 --- */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes float {
+          0% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+          33% { transform: translateY(-30px) translateX(15px); opacity: 0.8; }
+          66% { transform: translateY(-10px) translateX(-15px); opacity: 0.5; }
+          100% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.4; transform: scale(1) translate(-50%, -50%); }
+          50% { opacity: 0.6; transform: scale(1.05) translate(-48%, -48%); }
+        }
+        .particle {
+          position: absolute;
+          background: white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
+          animation: float 10s infinite ease-in-out;
+        }
+      `}} />
 
-        <div className="text-center mb-8 md:mb-10 mt-2 md:mt-4">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-2 uppercase tracking-tighter">
-            Oya <span className="text-oya-red">Pray!</span>
+      {/* --- BACKGROUND EFFECTS --- */}
+      {/* The Giant Glowing Celestial Orb */}
+      <div
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] md:w-[900px] md:h-[900px] rounded-full mix-blend-screen pointer-events-none origin-top-left"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,230,150,0.15) 0%, rgba(255,200,100,0.05) 40%, transparent 70%)',
+          animation: 'pulse-glow 8s infinite ease-in-out'
+        }}
+      ></div>
+      {/* Subtle Arc Light */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/[0.03] blur-[100px] rounded-full pointer-events-none"></div>
+
+      {/* Floating Space Dust (Particles) */}
+      <div className="particle w-1.5 h-1.5 top-[20%] left-[15%]" style={{ animationDelay: '0s', animationDuration: '8s' }}></div>
+      <div className="particle w-2 h-2 top-[70%] left-[85%] bg-amber-200" style={{ animationDelay: '2s', animationDuration: '12s' }}></div>
+      <div className="particle w-1 h-1 top-[80%] left-[25%]" style={{ animationDelay: '4s', animationDuration: '9s' }}></div>
+      <div className="particle w-2 h-2 top-[15%] left-[75%]" style={{ animationDelay: '1s', animationDuration: '15s' }}></div>
+      <div className="particle w-3 h-3 top-[40%] left-[5%]" style={{ animationDelay: '3s', animationDuration: '11s', background: '#fef3c7', boxShadow: '0 0 15px 4px rgba(251, 191, 36, 0.3)' }}></div>
+
+      {/* --- MAIN GLASSMORPHISM CARD --- */}
+      <div className="relative z-10 w-full max-w-[550px] flex flex-col items-center">
+
+        {/* Header Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-3">
+            <span className="text-gray-200">Oya </span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ffe177] to-[#e49c18] drop-shadow-[0_0_15px_rgba(228,156,24,0.4)]">
+              Pray!
+            </span>
           </h1>
-          <p className="text-oya-yellow font-semibold text-base md:text-lg uppercase tracking-wider mb-2">
-            Don't let me catch you ignoring this.
-          </p>
-          <p className="text-gray-400 text-xs md:text-sm">
-            Oya, time is going! I will call your WhatsApp and shout at you until you pray. Try me.
-          </p>
+          <p className="text-gray-400 text-sm md:text-base tracking-wide">Your Path to Inner Reflection.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-          <div>
-            <label htmlFor="phone" className="block text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
-              WhatsApp Number
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              placeholder="+234 800 000 0000"
-              className="w-full px-4 py-3.5 md:py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all placeholder-gray-500"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-            />
-          </div>
+        {/* The Form Wrapper */}
+        {/* NOTE: Wrap this inside a <form onSubmit={handleSubmit}> if that's how your logic is setup! */}
+        <div className="w-full bg-[#151118]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-[0_10_40px_rgba(0,0,0,0.5)]">
 
-          <div>
-            <label htmlFor="date" className="block text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
-              Select Date
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Calendar className="h-5 w-5 text-gray-500" />
-              </div>
+          {/* Top Row: WhatsApp & Start Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">WhatsApp Number</label>
               <input
-                type="date"
-                id="date"
-                className="w-full pl-10 pr-4 py-3.5 md:py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all [color-scheme:dark]"
-                value={prayerDate}
-                onChange={(e) => setPrayerDate(e.target.value)}
-                required
+                type="tel"
+                placeholder="WhatsApp Number"
+                // onChange={(e) => setPhone(e.target.value)} <-- CONNECT YOUR STATE HERE
+                className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
               />
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="timezone" className="block text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
-              Your Timezone
-            </label>
-            <select
-              id="timezone"
-              className="w-full px-4 py-3.5 md:py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              required
-            >
-              <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
-              <option value="America/New_York">America/New_York (EST)</option>
-              {timezone && !["Africa/Lagos", "Europe/London", "America/New_York"].includes(timezone) && (
-                <option value={timezone}>{timezone} (Local)</option>
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="frequency" className="block text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">
-              How often?
-            </label>
-            <select
-              id="frequency"
-              className="w-full px-4 py-3.5 md:py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all"
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              required
-            >
-              <option value="Just once">Just once</option>
-              <option value="Every Day (Morning Devotion)">Every Day (Morning Devotion)</option>
-              <option value="Weekly (Friday Vigil)">Weekly (Friday Vigil)</option>
-            </select>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wide">
-                Prayer Times (Max 3)
-              </label>
-              {prayerTimes.length < 3 && (
-                <button
-                  type="button"
-                  onClick={handleAddTime}
-                  className="text-xs text-oya-yellow hover:text-white transition-colors font-bold uppercase tracking-wider"
-                >
-                  + Add Time
-                </button>
-              )}
-            </div>
-            <div className="space-y-3">
-              {prayerTimes.map((time, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <input
-                    type="time"
-                    className="flex-1 px-4 py-3.5 md:py-3 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-oya-red focus:border-transparent transition-all [color-scheme:dark]"
-                    value={time}
-                    onChange={(e) => handleTimeChange(index, e.target.value)}
-                    required
-                  />
-                  {prayerTimes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTime(index)}
-                      className="p-3.5 md:p-3 bg-[#2a2a2a] border border-gray-700 rounded-lg text-gray-400 hover:text-oya-red hover:border-oya-red transition-all"
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Select Start Date</label>
+              <div className="relative">
+                <input
+                  type="date"
+                  className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="pt-2 md:pt-4">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-4 md:py-4 bg-gradient-to-r from-[#ea580c] to-[#991b1b] hover:from-[#d04e0a] hover:to-[#7f1616] text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-lg shadow-[0_0_20px_rgba(234,88,12,0.4)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-3"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Set Reminder NOW"
-              )}
-            </button>
+          {/* Middle Row: Timezone & Frequency */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Your Timezone</label>
+              <select className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all appearance-none">
+                <option>Your Timezone</option>
+                <option>Lagos (WAT)</option>
+              </select>
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-[11px] text-gray-300 font-medium tracking-wide ml-1">Frequency</label>
+              <select className="w-full bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-3 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all appearance-none">
+                <option>Once</option>
+                <option>Daily</option>
+              </select>
+            </div>
           </div>
-        </form>
 
-        {showToast && (
-          <div className="absolute top-[-10px] md:top-[-20px] left-1/2 transform -translate-x-1/2 w-[95%] md:w-[110%] bg-oya-yellow text-oya-dark px-4 py-3 md:px-6 md:py-4 rounded-lg shadow-2xl animate-bounce z-20 border-2 md:border-4 border-oya-red">
-            <p className="font-black text-center uppercase tracking-wide text-sm md:text-lg leading-tight">
-              I have heard you! Don't be late or else! 😡🔪
-            </p>
+          {/* Prayer Times Section */}
+          <div className="space-y-3 mb-8">
+            <label className="text-[13px] text-white font-medium ml-1">Prayer Times</label>
+
+            {/* Time Slot 1 */}
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                // onChange={(e) => setTime(e.target.value)} <-- CONNECT YOUR STATE HERE
+                className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+              />
+              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+              </button>
+            </div>
+
+            {/* Time Slot 2 (Visual Mockup only - duplicate logic if you need multiple times) */}
+            <div className="flex items-center gap-2">
+              <input type="time" className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50" />
+              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+              </button>
+            </div>
+
+            {/* Time Slot 3 */}
+            <div className="flex items-center gap-2">
+              <input type="time" className="flex-1 bg-[#201c24]/80 border border-white/[0.05] rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50" />
+              <button className="bg-[#201c24]/80 border border-white/[0.05] p-3 rounded-lg hover:bg-white/[0.05] transition-colors">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Submit Button */}
+          <button
+            // onClick={handleSubmit} <-- CONNECT YOUR SUBMIT FUNCTION HERE
+            className="w-full bg-gradient-to-r from-[#ffd452] to-[#e69b12] text-black font-extrabold text-[15px] tracking-wide py-3.5 rounded-full shadow-[0_0_20px_rgba(230,155,18,0.4)] hover:shadow-[0_0_30px_rgba(230,155,18,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300"
+          >
+            SET REMINDER NOW
+          </button>
+
+        </div>
       </div>
-    </main>
+    </div>
   );
-}
