@@ -1,236 +1,341 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
+  // --- STATE SYSTEM ---
+  const [step, setStep] = useState(0);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [timezone, setTimezone] = useState("");
-  const [prayerDate, setPrayerDate] = useState("");
-  const [frequency, setFrequency] = useState("Just once");
-  const [prayerTimes, setPrayerTimes] = useState<string[]>(['']);
-  const [showToast, setShowToast] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [timezone, setTimezone] = useState("Lagos, Nigeria (GMT+1)");
+  const [frequency, setFrequency] = useState("Daily");
+  const [prayerTimes, setPrayerTimes] = useState<string[]>(["05:30"]);
   const [isLoading, setIsLoading] = useState(false);
+  const [todayDate, setTodayDate] = useState("");
 
   useEffect(() => {
-    const defaultTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos";
-    setTimezone(defaultTz);
-    setPrayerDate(new Date().toISOString().split('T')[0]);
+    setTodayDate(new Date().toISOString().split("T")[0]);
   }, []);
 
-  const resetForm = () => {
-    setPhoneNumber("");
-    setPrayerTimes(['']);
-    setFrequency("Just once");
-    setPrayerDate(new Date().toISOString().split('T')[0]);
-    setShowToast(false);
+  const nextStep = () => setStep((prev) => prev + 1);
+  const prevStep = () => setStep((prev) => prev - 1);
+
+  const handlePhoneChange = (val: string) => {
+    const numericOnly = val.replace(/[^\d+]/g, "");
+    if (numericOnly.startsWith("0") && numericOnly.length > 11) {
+      return;
+    }
+    setPhoneNumber(numericOnly);
   };
 
   const handleAddTime = () => {
-    if (prayerTimes.length < 3) setPrayerTimes([...prayerTimes, '']);
+    if (prayerTimes.length < 3) setPrayerTimes([...prayerTimes, "12:00"]);
   };
-
   const handleRemoveTime = (index: number) => {
     setPrayerTimes(prayerTimes.filter((_, i) => i !== index));
   };
-
   const handleTimeChange = (index: number, value: string) => {
     const newTimes = [...prayerTimes];
     newTimes[index] = value;
     setPrayerTimes(newTimes);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    
+    // Format phone number to E.164 (ensure it starts with +)
+    const cleanPhone = phoneNumber.replace(/[^\d]/g, "");
+    const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+${cleanPhone}`;
+    const validPrayerTimes = prayerTimes.filter(t => t.trim() !== "");
+
+    try {
+      const { error } = await supabase
+        .from('reminders')
+        .upsert([
+          {
+            phone: formattedPhone,
+            start_date: startDate,
+            timezone: timezone,
+            frequency: frequency,
+            prayer_times: validPrayerTimes,
+          },
+        ]);
+
+      if (error) {
+        console.error("Supabase Error:", error);
+        alert(`Failed to save reminder: ${error.message}`);
+      } else {
+        setStep(4);
+      }
+    } catch (err) {
+      console.error("Submission Error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
       setIsLoading(false);
-      setShowToast(true);
-    }, 2500);
+    }
+  };
+
+  const handleReset = () => {
+    setPhoneNumber("");
+    setStartDate("");
+    setPrayerTimes(["05:30"]);
+    setStep(0);
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0d0a14] flex items-center justify-center p-4 overflow-hidden">
-
-      {/* --- 🖋️ COMFY FONT & ANIMATION IMPORT --- */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-        body { font-family: 'Outfit', sans-serif; }
-        .breath-cta { letter-spacing: 0.1em; }
-
-        @keyframes slow-rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+    <div className="relative min-h-[100dvh] bg-[#120E0B] text-[#e7e0ef] flex flex-col items-center justify-center p-0 md:p-6 overflow-hidden select-none">
+      
+      {/* --- CUSTOM FONTS & ANIMATIONS --- */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;700&display=swap');
+        
+        .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-body { font-family: 'DM Sans', sans-serif; }
+        
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes float-rotate {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(10deg); }
+        .animate-fade-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* The Cosmic Gradient from your code */
+        .cosmic-gradient {
+          background: radial-gradient(circle at center, rgba(251, 191, 36, 0.08) 0%, rgba(18, 14, 11, 1) 70%);
+        }
+        
+        /* The specific text glow you provided */
+        .text-glow-gold {
+          background: linear-gradient(to right, #fbbf24, #d97706);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
         }
 
-        .animate-slow-rotate {
-          animation: slow-rotate 60s linear infinite;
+        .glass-container {
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
+      `}</style>
 
-        .animate-float-rotate {
-          animation: float-rotate 10s ease-in-out infinite;
-        }
-      `}} />
-
-      {/* --- 🌟 INTERACTIVE GLOWING BACKGROUND 🌟 --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Central Glow Orb */}
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-b from-white/5 to-transparent blur-[80px]"></div>
-
-        {/* Floating Icons with Rotation Logic */}
-        {[
-          { icon: "book", top: "12%", left: "10%", delay: "0s", duration: "12s" },
-          { icon: "cross", top: "60%", right: "10%", delay: "2s", duration: "15s" },
-          { icon: "clock", bottom: "15%", left: "20%", delay: "1s", duration: "10s" },
-          { icon: "flame", bottom: "35%", left: "5%", delay: "3s", duration: "14s" },
-          { icon: "moon", top: "25%", right: "25%", delay: "4s", duration: "18s" },
-          { icon: "bell", top: "5%", right: "40%", delay: "1.5s", duration: "11s" },
-          { icon: "sparkle", bottom: "10%", right: "30%", delay: "5s", duration: "13s" },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className="absolute pointer-events-auto transition-all duration-700 hover:scale-150 hover:opacity-100 opacity-20 group"
-            style={{
-              top: item.top,
-              left: item.left,
-              right: item.right,
-              bottom: item.bottom,
-              animation: `float-rotate ${item.duration} ease-in-out infinite`,
-              animationDelay: item.delay
-            }}
-          >
-            <div className="w-12 h-12 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:shadow-[0_0_40px_rgba(250,187,50,0.8)] group-hover:border-[#fabb32]/60 group-hover:bg-[#fabb32]/15 animate-pulse">
-              {item.icon === "book" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>}
-              {item.icon === "cross" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v16m8-8H4"></path></svg>}
-              {item.icon === "clock" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
-              {item.icon === "flame" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>}
-              {item.icon === "moon" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>}
-              {item.icon === "bell" && <svg className="w-6 h-6 text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>}
-              {item.icon === "sparkle" && <svg className="w-6 h-6 text-[#a8a1b2] group-hover:text-[#fabb32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>}
-            </div>
-          </div>
-        ))}
-
-        {/* --- 🗣️ DENSE NAIJA WHISPERS WITH SLOW ROTATION --- */}
-        <div className="absolute top-[28%] right-[5%] text-[9px] text-[#eae0d5]/30 font-bold uppercase tracking-[0.2em] bg-white/5 px-3 py-1.5 rounded-lg animate-float-rotate opacity-50">No Sleep</div>
-        <div className="absolute top-[85%] left-[12%] text-[9px] text-[#fabb32]/30 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-3 py-1.5 rounded-lg animate-float-rotate" style={{ animationDelay: '2s' }}>Oya, Lock In!</div>
-        <div className="absolute top-[55%] right-[2%] text-[8px] text-[#fabb32]/20 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-2 py-1.5 rounded-lg animate-float-rotate" style={{ animationDelay: '4s' }}>No Press Phone</div>
-        <div className="absolute bottom-[8%] left-[25%] text-[9px] text-[#eae0d5]/25 font-bold uppercase tracking-[0.2em] bg-white/5 px-2.5 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '1s' }}>Talk to your God</div>
-        <div className="absolute top-[35%] right-[28%] text-[8px] text-[#eae0d5]/30 font-bold uppercase tracking-[0.2em] bg-white/5 px-2 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '3s' }}>Leave Woman, Call God</div>
-        <div className="absolute bottom-[40%] left-[8%] text-[8px] text-[#fabb32]/25 font-bold uppercase tracking-[0.2em] bg-[#fabb32]/5 px-2 py-1 rounded-lg animate-float-rotate" style={{ animationDelay: '5s' }}>Leave Man, Call God</div>
+      {/* ==================== CELESTIAL BACKGROUND LAYER ==================== */}
+      <div className="absolute inset-0 z-0 pointer-events-none cosmic-gradient overflow-hidden">
+        {/* Subtle stars/particles from your code */}
+        <div className="absolute top-10 left-10 w-1 h-1 bg-white/20 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/4 right-20 w-1.5 h-1.5 bg-[#fbbf24]/10 rounded-full blur-[1px] animate-pulse" style={{ animationDelay: "1s" }}></div>
+        <div className="absolute bottom-1/3 left-15 w-1 h-1 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: "2.5s" }}></div>
+        <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-[#fbbf24]/20 rounded-full animate-pulse" style={{ animationDelay: "1.5s" }}></div>
       </div>
 
-      {/* --- 🚀 NAIJA LOADING STATE --- */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09070e]/90 backdrop-blur-xl px-4 animate-in fade-in duration-300">
-          <div className="relative z-10 w-24 h-24 flex items-center justify-center mb-7">
-            <div className="absolute inset-0 rounded-full border-t-2 border-b-2 border-[#fabb32]/30 animate-[spin_2s_linear_infinite]"></div>
-            <div className="absolute inset-2 rounded-full border-l-2 border-r-2 border-[#e89a1e]/50 animate-[spin_3s_linear_infinite_reverse]"></div>
-            <div className="w-10 h-10 bg-gradient-to-br from-[#fabb32] to-[#e89a1e] rounded-full animate-pulse shadow-[0_0_40px_rgba(250,187,50,0.8)]"></div>
-          </div>
-          <h2 className="relative z-10 text-xl font-bold text-[#f4ece1] mb-2 tracking-[0.2em] uppercase animate-pulse text-center">Oya, Locking It In!</h2>
-          <p className="relative z-10 text-[#a8a1b2] text-sm text-center max-w-xs leading-relaxed">WhatsApp people are coming... You must pray! 🕯️🔥</p>
-        </div>
-      )}
-
-      {/* --- SUCCESS MODAL --- */}
-      {showToast && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
-          <div className="relative transform animate-in fade-in zoom-in duration-300 w-full max-w-sm">
-            <div className="absolute inset-[-80px] blur-[25px] opacity-20 pointer-events-none z-[-1] flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-[150%] h-[150%] text-[#fabb32]"><path stroke="currentColor" strokeWidth="1" d="M12 2v20m8-12H4" /></svg>
+      {/* ==================== RESPONSIVE CARD ENGINE ==================== */}
+      <main className="relative z-10 w-full h-[100dvh] md:h-auto md:min-h-[660px] md:max-w-[440px] md:glass-container md:bg-[#15121c]/80 rounded-none md:rounded-[40px] flex flex-col p-8 md:p-10 transition-all duration-500 overflow-y-auto md:overflow-visible font-body">
+        
+        {/* --- NAVIGATION ANCHOR BAR (Only on inner steps) --- */}
+        {step > 0 && step < 4 && (
+          <div className="flex items-center justify-between mb-8 animate-fade-up">
+            <button onClick={prevStep} className="text-[#a09ca6] hover:text-[#fbbf24] transition-colors p-2 -ml-2 rounded-full active:bg-white/5">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+            <div className="flex gap-2">
+              {[1, 2, 3].map((num) => (
+                <div key={num} className={`h-1.5 rounded-full transition-all duration-500 ${step === num ? "bg-gradient-to-r from-[#fbbf24] to-[#d97706] w-8 shadow-[0_0_8px_#fbbf2466]" : "bg-white/10 w-4"}`}></div>
+              ))}
             </div>
-            <div className="bg-[#18141f] border border-[#fabb32]/40 rounded-[32px] p-10 w-full text-center shadow-2xl">
-              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/30">
-                <span className="text-2xl">🔥</span>
+            <div className="w-10"></div>
+          </div>
+        )}
+
+        {/* --- CONTEXT STEP COMPONENT SWITCHER --- */}
+        <div key={step} className="animate-fade-up flex flex-col flex-grow h-full justify-center">
+          
+          {/* --- STEP 0: YOUR BEAUTIFUL CUSTOM SPLASH SCREEN --- */}
+          {step === 0 && (
+            <div className="flex flex-col items-center justify-center flex-grow w-full relative">
+              
+              {/* Centerpiece Branding */}
+              <div className="flex flex-col items-center gap-[24px] text-center my-auto">
+                
+                {/* Logo Section with Aura (Replaced img with perfectly styled SVG) */}
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 bg-[#fbbf24]/20 blur-[40px] rounded-full transform scale-110"></div>
+                  <svg className="relative w-[120px] h-[120px] text-[#fbbf24] mix-blend-screen" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <line x1="50" y1="16" x2="50" y2="84" strokeLinecap="round"/>
+                    <circle cx="50" cy="46" r="19"/>
+                    <path d="M50 33 Q50 46 37 46 Q50 46 50 59 Q50 46 63 46 Q50 46 50 33 Z" fill="currentColor"/>
+                    <circle cx="50" cy="74" r="2" fill="currentColor"/>
+                  </svg>
+                </div>
+                
+                {/* Typography */}
+                <div className="space-y-[8px]">
+                  <h1 className="font-display tracking-tight flex items-center justify-center gap-2 text-[40px] md:text-[44px]">
+                    <span className="text-[#e7e0ef] font-black">Oya</span>
+                    <span className="text-glow-gold font-black">Pray</span>
+                  </h1>
+                  <p className="font-body text-[#e7e0ef] tracking-[0.15em] uppercase text-[10px] md:text-[11px] font-medium">
+                    Your path to inner reflection
+                  </p>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-[#f4ece1] mb-3 tracking-tight text-center uppercase">Locked In!</h2>
-              <p className="text-[#a8a1b2] text-[16px] mb-8 leading-relaxed text-center font-medium italic">
-                "I'm coming for you, no sleeping on a bicycle. We move! 🚀"
-              </p>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full bg-[#2a2333] hover:bg-[#fabb32] hover:text-black text-[#f4ece1] font-bold py-4.5 rounded-full transition-all uppercase tracking-widest text-[13px]"
-              >
-                I hear you (Close)
+
+              {/* Call to Action (Anchored Bottom) */}
+              <div className="absolute bottom-8 md:bottom-2 left-0 right-0 flex flex-col items-center w-full">
+                <button onClick={nextStep} className="group flex items-center gap-2 px-6 py-3 rounded-full glass-container hover:bg-white/5 transition-all duration-300">
+                  <span className="text-[#ffe1a7] font-body tracking-[0.15em] uppercase text-xs font-bold">Tap to begin</span>
+                  <svg className="w-5 h-5 text-[#fbbf24] group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+                
+                {/* Nigerian professional touch: subtle location/status indicator */}
+                <div className="mt-[24px] flex items-center gap-2 opacity-40">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></div>
+                  <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-bold text-[#e7e0ef]">Connect with your maker</span>
+                </div>
+              </div>
+              
+            </div>
+          )}
+
+          {/* --- STEP 1: WHATSAPP LINK --- */}
+          {step === 1 && (
+            <div className="flex flex-col flex-grow justify-start">
+              <h2 className="text-3xl font-display font-bold mb-3 tracking-tight">Link WhatsApp</h2>
+              <p className="text-[#d3c5ac] mb-8 text-sm leading-relaxed">Connect your primary number to receive gentle, automated reminders to pause and pray.</p>
+              
+              <div className="bg-[#15121c] border border-white/5 rounded-2xl p-6 mb-6 transition-colors focus-within:border-[#fbbf24]/40">
+                <label className="block text-[10px] uppercase tracking-[0.2em] text-[#d3c5ac] font-bold mb-3">WhatsApp Number</label>
+                <input 
+                  type="tel" 
+                  value={phoneNumber}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="+234 800 000 0000" 
+                  className="w-full bg-transparent border-b border-white/10 pb-2 text-2xl font-display focus:border-[#fbbf24] outline-none transition-colors text-white placeholder-white/20 font-light" 
+                />
+              </div>
+
+              <div className="flex items-start gap-4 bg-[#fbbf24]/5 border border-[#fbbf24]/10 p-5 rounded-2xl mb-auto">
+                <svg className="w-5 h-5 text-[#fbbf24] shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                <p className="text-xs text-[#d3c5ac] leading-relaxed">Your privacy is divine. We never share your number with third parties.</p>
+              </div>
+
+              <button onClick={nextStep} disabled={phoneNumber.length < 7} className={`w-full bg-[#fbbf24] text-[#261a00] font-display font-bold py-[18px] rounded-2xl mt-8 uppercase tracking-widest text-xs active:scale-[0.98] transition-all disabled:opacity-40 disabled:active:scale-100 mb-2 md:mb-0`}>
+                Continue
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* --- MAIN FORM --- */}
-      <div className="relative z-10 w-full max-w-[520px]">
-        <div className="text-center mb-12">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tighter mb-4 flex items-center justify-center gap-3">
-            <span className="text-[#eae0d5] font-light">Oya</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#fabb32] to-[#e89a1e] font-extrabold drop-shadow-[0_0_15px_rgba(250,187,50,0.3)]">Pray!</span>
-          </h1>
-          <p className="text-[#a8a1b2] text-[16px] tracking-[0.05em] font-medium opacity-80">Your Path to Inner Reflection.</p>
-        </div>
+          {/* --- STEP 2: CHRONO PREFS --- */}
+          {step === 2 && (
+            <div className="flex flex-col flex-grow justify-start">
+              <h2 className="text-3xl font-display font-bold mb-3 tracking-tight">Journey's start</h2>
+              <div className="bg-[#15121c] border border-white/5 rounded-2xl p-5 mb-8 text-[#d3c5ac] text-xs md:text-sm leading-relaxed">
+                Choose a date and time that aligns with your devotions across your local timezone.
+              </div>
 
-        <form onSubmit={handleSubmit} className="w-full bg-[#14101a]/90 backdrop-blur-md border border-[#262030] rounded-[40px] p-8 md:p-11 shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="flex flex-col space-y-2">
-              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">WhatsApp Number</label>
-              <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="e.g. +234..." required className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#f4ece1] placeholder-[#6b6475] focus:outline-none focus:border-[#fabb32]/50 transition-all" />
-            </div>
-            <div className="flex flex-col space-y-2">
-              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Start Date</label>
-              <input type="date" value={prayerDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setPrayerDate(e.target.value)} required className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] [color-scheme:dark] focus:outline-none focus:border-[#fabb32]/50" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div className="flex flex-col space-y-2">
-              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Timezone</label>
-              <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] appearance-none focus:outline-none focus:border-[#fabb32]/50">
-                <option value="Africa/Lagos">Lagos (WAT)</option>
-                <option value="Europe/London">London (GMT)</option>
-                <option value="America/New_York">New York (EST)</option>
-              </select>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <label className="text-[11px] text-[#c4bccf] ml-2 uppercase tracking-[0.2em] font-bold opacity-70">Frequency</label>
-              <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-full bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 text-sm text-[#a8a1b2] appearance-none focus:outline-none focus:border-[#fabb32]/50">
-                <option value="Just once">Just once</option>
-                <option value="Daily">Daily</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-4 mb-12">
-            <label className="text-[13px] text-[#eae0d5] font-bold ml-2 uppercase tracking-[0.1em]">Prayer Times</label>
-            {prayerTimes.map((time, index) => (
-              <div key={index} className="flex items-center gap-3 group">
-                <div className="relative flex-1 bg-[#1e1926] border border-white/5 rounded-2xl px-5 py-4 focus-within:border-[#fabb32]/50 transition-all">
-                  <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} required className="bg-transparent w-full text-sm text-[#a8a1b2] focus:outline-none [color-scheme:dark]" />
+              <div className="space-y-4 mb-auto">
+                <div className="bg-[#15121c] border border-white/5 rounded-2xl p-4 focus-within:border-[#fbbf24]/40 transition-colors">
+                  <label className="block text-[10px] uppercase tracking-[0.2em] text-[#d3c5ac] font-bold mb-2">Start Date</label>
+                  <input 
+                    type="date" 
+                    value={startDate}
+                    min={todayDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-transparent text-white font-display text-lg focus:outline-none [color-scheme:dark] cursor-pointer" 
+                  />
                 </div>
-                {index === prayerTimes.length - 1 && prayerTimes.length < 3 && (
-                  <button type="button" onClick={handleAddTime} className="bg-[#262030] w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-[#c4bccf] hover:text-[#fabb32] border border-white/5 hover:border-[#fabb32]/40 transition-all shadow-lg">+</button>
-                )}
-                {prayerTimes.length > 1 && (
-                  <button type="button" onClick={() => handleRemoveTime(index)} className="bg-[#262030] w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-red-400 border border-white/5 hover:bg-red-500/10 transition-all shadow-lg">-</button>
+
+                <div className="bg-[#15121c] border border-white/5 rounded-2xl p-4 focus-within:border-[#fbbf24]/40 transition-colors">
+                  <label className="block text-[10px] uppercase tracking-[0.2em] text-[#d3c5ac] font-bold mb-2">Your Timezone</label>
+                  <select 
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="w-full bg-transparent text-white font-display text-lg focus:outline-none appearance-none cursor-pointer"
+                  >
+                    <option className="bg-[#15121c]">Lagos, Nigeria (GMT+1)</option>
+                    <option className="bg-[#15121c]">London, UK (GMT)</option>
+                    <option className="bg-[#15121c]">New York, USA (EST)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button onClick={nextStep} disabled={!startDate} className={`w-full bg-[#fbbf24] text-[#261a00] font-display font-bold py-[18px] rounded-2xl mt-8 uppercase tracking-widest text-xs active:scale-[0.98] transition-all disabled:opacity-40 disabled:active:scale-100 mb-2 md:mb-0`}>
+                Continue
+              </button>
+            </div>
+          )}
+
+          {/* --- STEP 3: FREQUENCY & ALARM CLOCKS --- */}
+          {step === 3 && (
+            <div className="flex flex-col flex-grow justify-start">
+              <h2 className="text-3xl font-display font-bold mb-6 tracking-tight">Frequency</h2>
+              
+              <div className="flex bg-[#15121c] border border-white/5 rounded-xl p-1 mb-6">
+                <button onClick={() => setFrequency("Once")} className={`flex-1 py-3.5 transition-all duration-300 rounded-lg text-xs font-bold ${frequency === "Once" ? "bg-[#37333e] text-[#fbbf24] shadow-md" : "text-[#d3c5ac] hover:text-white"}`}>Once</button>
+                <button onClick={() => setFrequency("Daily")} className={`flex-1 py-3.5 transition-all duration-300 rounded-lg text-xs font-bold ${frequency === "Daily" ? "bg-[#37333e] text-[#fbbf24] shadow-md" : "text-[#d3c5ac] hover:text-white"}`}>Daily</button>
+              </div>
+
+              <div className="flex items-center justify-between mb-3 px-1">
+                <label className="text-xs uppercase tracking-wider text-[#fbbf24] font-bold">Prayer Times</label>
+                <span className="text-[10px] uppercase tracking-widest text-[#d3c5ac] opacity-80">Max 3 reminders</span>
+              </div>
+
+              <div className="space-y-3 mb-auto">
+                {prayerTimes.map((time, index) => (
+                  <div key={index} className="flex items-center justify-between bg-[#15121c] border border-white/5 rounded-2xl px-5 py-4 focus-within:border-[#fbbf24]/40 transition-colors">
+                    <div className="flex items-center gap-4 flex-1">
+                      <svg className="w-5 h-5 text-[#fbbf24]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} className="bg-transparent text-white font-display font-bold text-lg outline-none w-full [color-scheme:dark] cursor-pointer" />
+                    </div>
+                    {prayerTimes.length > 1 && (
+                      <button onClick={() => handleRemoveTime(index)} className="text-[#d3c5ac] hover:text-red-400 p-2 rounded-full transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {prayerTimes.length < 3 && (
+                  <button onClick={handleAddTime} className="w-full border border-dashed border-white/10 hover:border-white/20 text-[#d3c5ac] transition-colors rounded-2xl py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-bold mt-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                    Add Prayer Time
+                  </button>
                 )}
               </div>
-            ))}
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="breath-cta w-full bg-gradient-to-r from-[#fabb32] to-[#e89a1e] text-[#4a340a] font-extrabold text-[16px] py-5 rounded-full shadow-[0_10px_30px_rgba(250,187,50,0.3)] hover:shadow-[0_15px_40px_rgba(250,187,50,0.5)] hover:scale-[1.03] active:scale-95 transition-all duration-300"
-          >
-            SET REMINDER NOW
-          </button>
-        </form>
-      </div>
+              <button onClick={handleSubmit} disabled={isLoading} className="w-full bg-[#fbbf24] text-[#261a00] font-display font-bold py-[18px] rounded-2xl mt-8 uppercase tracking-widest text-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 mb-2 md:mb-0">
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-[#261a00]/30 border-t-[#261a00] rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Set Reminder Now
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* --- STEP 4: CELESTIAL SUCCESS CONSOLE --- */}
+          {step === 4 && (
+            <div className="flex flex-col items-center justify-center flex-grow text-center h-full pt-8">
+              
+              <div className="w-24 h-24 bg-[#fbbf24] rounded-full flex items-center justify-center mb-8 shadow-[0_15px_35px_rgba(251,191,36,0.25)]">
+                <svg className="w-10 h-10 text-[#261a00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+              </div>
+              
+              <h2 className="text-3xl font-display font-bold mb-4 tracking-tight">Your reminder is set!</h2>
+              <p className="text-[#d3c5ac] mb-12 text-sm px-4">You will receive your divine notifications on WhatsApp.</p>
+              
+              <button onClick={handleReset} className={`w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-display font-bold py-[18px] rounded-2xl uppercase tracking-widest text-xs active:scale-[0.98] transition-all mt-auto md:mt-0 mb-4 md:mb-0`}>
+                I Hear You (Close)
+              </button>
+              
+            </div>
+          )}
+
+        </div>
+      </main>
     </div>
   );
 }
