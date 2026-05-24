@@ -44,9 +44,21 @@ export default function Home() {
   const handleSubmit = async () => {
     setIsLoading(true);
     
-    // Format phone number to E.164 (ensure it starts with +)
-    const cleanPhone = phoneNumber.replace(/[^\d]/g, "");
-    const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+${cleanPhone}`;
+    // Format phone number to E.164 (automatically prepend Nigeria +234 for local numbers)
+    let cleanPhone = phoneNumber.replace(/\D/g, "");
+    let formattedPhone = phoneNumber.startsWith("+") ? `+${cleanPhone}` : "";
+
+    if (!formattedPhone) {
+      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+        formattedPhone = `+234${cleanPhone.substring(1)}`;
+      } else if (cleanPhone.startsWith("234") && cleanPhone.length === 13) {
+        formattedPhone = `+${cleanPhone}`;
+      } else if (cleanPhone.length === 10 && (cleanPhone.startsWith("7") || cleanPhone.startsWith("8") || cleanPhone.startsWith("9"))) {
+        formattedPhone = `+234${cleanPhone}`;
+      } else {
+        formattedPhone = `+${cleanPhone}`; // Fallback
+      }
+    }
     const validPrayerTimes = prayerTimes.filter(t => t.trim() !== "");
 
     try {
